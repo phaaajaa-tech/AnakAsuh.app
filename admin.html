@@ -1,0 +1,99 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin Panel | AnakAsuh</title><style>
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:system-ui,sans-serif;background:#f0f4f1;color:#17352d;min-height:100vh}
+.header{background:#087253;color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.header h1{font-size:18px;font-weight:800}
+.header .info{font-size:13px;opacity:.9}
+.btn{border:0;border-radius:10px;padding:10px 16px;font-weight:700;cursor:pointer;font-size:14px}
+.btn-hijau{background:#087253;color:#fff}.btn-merah{background:#b42318;color:#fff}.btn-kuning{background:#E65100;color:#fff}.btn-abu{background:#e0e0e0;color:#333}
+.btn:disabled{opacity:.5;cursor:default}
+.container{max-width:960px;margin:0 auto;padding:16px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:10px 18px;border-radius:10px;background:#fff;border:2px solid #dcebe4;font-weight:700;cursor:pointer;font-size:14px;color:#17352d}
+.tab.active{background:#087253;color:#fff;border-color:#087253}
+.page{display:none}.page.active{display:block}
+.kartu{background:#fff;border:1px solid #dcebe4;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(20,92,58,.06)}
+.kartu h2{font-size:16px;margin-bottom:10px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row.full{grid-template-columns:1fr}
+label{display:block;font-size:12px;font-weight:700;margin-bottom:4px;color:#555}
+input,select,textarea{width:100%;border:1px solid #d9e7e1;border-radius:10px;padding:10px;font-size:14px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#087253}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:10px 8px;border-bottom:2px solid #dcebe4;color:#555;font-size:12px;text-transform:uppercase}
+td{padding:10px 8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.tag-aktif{background:#ecfaf4;color:#087253}.tag-tunggu{background:#fff8e1;color:#E65100}.tag-suspend{background:#fff0ee;color:#b42318}
+.badge-jenjang{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:#e3f2fd;color:#1565c0}
+.badge-pt{background:#f3e5f5;color:#7b1fa2}
+.empty{text-align:center;padding:30px;color:#999;font-size:14px}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.actions .btn{padding:6px 10px;font-size:12px}
+.loading{text-align:center;padding:20px;color:#999}
+</style>
+<script>
+fetch('/api/auth/me',{credentials:'include'}).then(r=>{if(!r.ok)return location.href='/login.html';r.json().then(d=>{if(d.user.role!=='ADMIN')location.href='/AnakAsuh.html'})}).catch(()=>location.href='/login.html');
+</script>
+</head><body>
+<div class="header">
+    <h1>🔧 Admin Panel — AnakAsuh</h1>
+    <div class="info"><span id="admin-name">Admin</span> • <a href="#" onclick="logout();return false" style="color:#fff;text-decoration:underline">Keluar</a></div>
+</div>
+<div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="bukaTab('anak')">👶 Data Anak Asuh</div>
+        <div class="tab" onclick="bukaTab('user')">👥 Daftar Pengguna</div>
+    </div>
+
+    <!-- TAB: ANAK ASUH -->
+    <div id="tab-anak" class="page active">
+        <div class="kartu">
+            <h2>➕ Tambah Anak Asuh Baru</h2>
+            <div class="form-row">
+                <div><label>Nama Lengkap</label><input id="c-nama" type="text" placeholder="Nama anak asuh"></div>
+                <div><label>Jenjang</label><select id="c-jenjang"><option value="SD">SD</option><option value="SMP">SMP</option><option value="SMA">SMA</option><option value="PT">Perguruan Tinggi</option></select></div>
+            </div>
+            <div class="form-row">
+                <div><label>Poin Prioritas</label><input id="c-poin" type="number" value="0" min="0"></div>
+                <div><label>Jumlah Sponsor</label><input id="c-sponsor" type="number" value="0" min="0"></div>
+            </div>
+            <div class="form-row full"><label>Prestasi</label><input id="c-prestasi" type="text" placeholder="Prestasi yang diraih"></div>
+            <div class="form-row full"><label>Catatan</label><textarea id="c-catatan" rows="2" placeholder="Catatan tambahan"></textarea></div>
+            <button class="btn btn-hijau" onclick="tambahAnak()">💾 Simpan</button>
+        </div>
+        <div class="kartu">
+            <h2>📋 Daftar Anak Asuh</h2>
+            <div id="tabel-anak"><div class="loading">Memuat data...</div></div>
+        </div>
+    </div>
+
+    <!-- TAB: USER -->
+    <div id="tab-user" class="page">
+        <div class="kartu">
+            <h2>👥 Daftar Pengguna Terdaftar</h2>
+            <div id="tabel-user"><div class="loading">Memuat data...</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+function bukaTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');event.target.classList.add('active');if(t==='anak')muatAnak();if(t==='user')muatUser()}
+function logout(){fetch('/api/auth/logout',{method:'POST',credentials:'include'}).finally(()=>location.href='/login.html')}
+
+// === ANAK ASUH ===
+async function muatAnak(){try{let r=await fetch('/api/admin/children',{credentials:'include'});let d=await r.json();if(!r.ok)throw Error(d.error);renderAnak(d.children)}catch(e){document.getElementById('tabel-anak').innerHTML='<div class="empty">Gagal memuat: '+e.message+'</div>'}}
+function renderAnak(list){if(!list.length){document.getElementById('tabel-anak').innerHTML='<div class="empty">Belum ada data anak asuh.</div>';return}let h='<table><thead><tr><th>Nama</th><th>Jenjang</th><th>Poin</th><th>Sponsor</th><th>Prestasi</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';list.forEach(c=>{let cls=c.status==='ACTIVE'?'tag-aktif':c.status==='SUSPENDED'?'tag-suspend':'tag-tunggu';let jc=c.jenjang==='PT'?'badge-jenjang badge-pt':'badge-jenjang';h+=`<tr id="row-${c.id}"><td><strong>${esc(c.name)}</strong></td><td><span class="${jc}">${c.jenjang}</span></td><td>${c.poin}</td><td>${c.sponsors_count}</td><td style="max-width:200px;font-size:12px">${esc(c.prestasi||'-')}</td><td><span class="tag ${cls}">${c.status}</span></td><td><div class="actions"><button class="btn btn-kuning" onclick="editAnak(${c.id})">✏️ Edit</button><button class="btn btn-abu" onclick="toggleStatus(${c.id},'${c.status}')">${c.status==='ACTIVE'?'🔴 Suspended':'🟢 Aktifkan'}</button><button class="btn btn-merah" onclick="hapusAnak(${c.id})">🗑️</button></div></td></tr>`});h+='</tbody></table>';document.getElementById('tabel-anak').innerHTML=h}
+async function tambahAnak(){let name=document.getElementById('c-nama').value.trim();let jenjang=document.getElementById('c-jenjang').value;let poin=document.getElementById('c-poin').value;let sponsors_count=document.getElementById('c-sponsor').value;let prestasi=document.getElementById('c-prestasi').value;let catatan=document.getElementById('c-catatan').value;if(!name)return alert('Nama wajib diisi.');try{let r=await fetch('/api/admin/children',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name,jenjang,poin,prestasi,catatan,sponsors_count})});let d=await r.json();if(!r.ok)throw Error(d.error);['c-nama','c-poin','c-sponsor','c-prestasi','c-catatan'].forEach(id=>document.getElementById(id).value='');document.getElementById('c-poin').value='0';document.getElementById('c-sponsor').value='0';muatAnak();alert('Anak asuh berhasil ditambahkan.')}catch(e){alert('Gagal: '+e.message)}}
+async function hapusAnak(id){if(!confirm('Hapus data anak asuh ini?'))return;try{let r=await fetch('/api/admin/children/'+id,{method:'DELETE',credentials:'include'});let d=await r.json();if(!r.ok)throw Error(d.error);muatAnak()}catch(e){alert('Gagal: '+e.message)}}
+async function toggleStatus(id,status){let baru=status==='ACTIVE'?'SUSPENDED':'ACTIVE';if(!confirm('Ubah status menjadi '+baru+'?'))return;try{let r=await fetch('/api/admin/children/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({status:baru})});let d=await r.json();if(!r.ok)throw Error(d.error);muatAnak()}catch(e){alert('Gagal: '+e.message)}}
+function editAnak(id){let row=document.getElementById('row-'+id);if(!row)return;let nama=prompt('Nama:',row.querySelector('td strong').textContent);if(nama===null)return;let poin=prompt('Poin:',row.children[2].textContent);if(poin===null)return;let prestasi=prompt('Prestasi:',row.children[4].textContent);if(prestasi===null)return;fetch('/api/admin/children/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({name:nama,poin:Number(poin)||0,prestasi:prestasi})}).then(r=>r.json()).then(d=>{if(d.ok)muatAnak();else alert('Gagal: '+(d.error||'Unknown'))}).catch(()=>alert('Gagal menyimpan.'))}
+
+// === USER ===
+async function muatUser(){try{let r=await fetch('/api/admin/users',{credentials:'include'});let d=await r.json();if(!r.ok)throw Error(d.error);renderUser(d.users)}catch(e){document.getElementById('tabel-user').innerHTML='<div class="empty">Gagal memuat: '+e.message+'</div>'}}
+function renderUser(list){if(!list.length){document.getElementById('tabel-user').innerHTML='<div class="empty">Belum ada pengguna terdaftar.</div>';return}let h='<table><thead><tr><th>Nama</th><th>WhatsApp</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody>';list.forEach(u=>{let cls=u.status==='ACTIVE'?'tag-aktif':u.status==='SUSPENDED'?'tag-suspend':'tag-tunggu';let rc=u.role==='ADMIN'?'badge-jenjang badge-pt':u.role==='CHILD'?'badge-jenjang':'badge-jenjang';let rn=u.role==='ADMIN'?'Admin':u.role==='CHILD'?'Anak Asuh':'Sponsor';h+=`<tr><td><strong>${esc(u.name)}</strong></td><td>${u.phone_e164}</td><td><span class="${rc}">${rn}</span></td><td><span class="tag ${cls}">${u.status}</span></td><td><div class="actions">`;if(u.role!=='ADMIN'){if(u.status==='ACTIVE')h+=`<button class="btn btn-abu" onclick="toggleUser(${u.id},'SUSPENDED')">🔴 Suspend</button>`;else h+=`<button class="btn btn-hijau" onclick="toggleUser(${u.id},'ACTIVE')">🟢 Aktifkan</button>`;if(u.status==='PENDING')h+=`<button class="btn btn-kuning" onclick="toggleUser(${u.id},'ACTIVE')">✅ Verifikasi</button>`}h+=`</div></td></tr>`});h+='</tbody></table>';document.getElementById('tabel-user').innerHTML=h}
+async function toggleUser(id,status){if(!confirm('Ubah status user menjadi '+status+'?'))return;try{let r=await fetch('/api/admin/users/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({status})});let d=await r.json();if(!r.ok)throw Error(d.error);muatUser()}catch(e){alert('Gagal: '+e.message)}}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+document.addEventListener('DOMContentLoaded',()=>{fetch('/api/auth/me',{credentials:'include'}).then(r=>r.json()).then(d=>{if(d.user)document.getElementById('admin-name').textContent=d.user.name});muatAnak()});
+</script>
+</body></html>
